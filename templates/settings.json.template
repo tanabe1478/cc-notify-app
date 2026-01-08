@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__CC_NOTIFY_PATH__/scripts/hook-wrapper.sh",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

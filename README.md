@@ -61,51 +61,21 @@ DISCORD_CHANNEL_ID=<通知先チャンネルID>
 
 ### 4. Claude Code の Hook 設定
 
+設定JSONを自動生成:
+
+```bash
+./scripts/generate-hook-config.sh
+```
+
+出力された JSON を以下のいずれかにコピー:
+
 #### グローバル設定（全プロジェクト共通）
 
-`~/.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node /path/to/cc-notify-app/dist/hook/permission-request.js",
-            "timeout": 600
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+`~/.claude/settings.json` に保存
 
 #### リポジトリごとの設定
 
-プロジェクトルートに `.claude/settings.json` または `.claude/settings.local.json` を作成:
-
-```json
-{
-  "hooks": {
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node /path/to/cc-notify-app/dist/hook/permission-request.js",
-            "timeout": 600
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+プロジェクトルートに `.claude/settings.json` または `.claude/settings.local.json` を作成
 
 | ファイル | 用途 |
 |----------|------|
@@ -155,6 +125,24 @@ DISCORD_CHANNEL_ID=<通知先チャンネルID>
 
 ### 1. サーバーを起動
 
+#### macOS アプリ（推奨）
+
+メニューバー常駐アプリでサーバーを管理:
+
+```bash
+# ビルド
+cd macos/CCNotify
+xcodegen generate
+xcodebuild -scheme CCNotify -configuration Release build
+
+# アプリを Applications にコピー
+cp -r ~/Library/Developer/Xcode/DerivedData/CCNotify-*/Build/Products/Release/CC\ Notify.app /Applications/
+```
+
+メニューバーのベルアイコンから「Start Server」をクリック。
+
+#### コマンドライン
+
 ```bash
 cd /path/to/cc-notify-app
 
@@ -174,7 +162,7 @@ pnpm start:server
 - **Approve**: 緑ボタン - 許可
 - **Deny**: 赤ボタン - 拒否（理由入力モーダルが表示される）
 
-## バックグラウンド実行
+## バックグラウンド実行（コマンドライン版）
 
 ### macOS (launchd)
 

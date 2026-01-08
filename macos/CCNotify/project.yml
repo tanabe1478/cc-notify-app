@@ -1,0 +1,35 @@
+name: CCNotify
+options:
+  bundleIdPrefix: com.ccnotify
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  CCNotify:
+    type: application
+    platform: macOS
+    sources:
+      - CCNotify
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ccnotify.app
+        INFOPLIST_FILE: CCNotify/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        PRODUCT_NAME: CC Notify
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "@executable_path/../Frameworks"
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+    entitlements:
+      path: CCNotify/CCNotify.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
