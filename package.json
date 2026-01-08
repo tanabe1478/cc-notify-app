@@ -1,0 +1,28 @@
+{
+  "name": "cc-notify-app",
+  "version": "1.0.0",
+  "description": "Claude Code Permission Request hook with Discord approval buttons",
+  "type": "module",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev:server": "tsx src/server/index.ts",
+    "dev:hook": "tsx src/hook/permission-request.ts",
+    "start:server": "node dist/server/index.js",
+    "start:hook": "node dist/hook/permission-request.js",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
