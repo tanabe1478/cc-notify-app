@@ -201,12 +201,13 @@ export class DiscordBot {
 
     // Add tool-specific details
     const toolInput = request.toolInput;
-    const maxLen = 500;
+    // Discord field value limit is 1024 chars, code block syntax uses ~8 chars
+    const codeBlockMaxLen = 900;
 
     switch (request.toolName) {
       case 'Bash': {
         const command = String(toolInput.command || '(empty)');
-        const truncated = command.length > maxLen ? command.slice(0, maxLen) + '...' : command;
+        const truncated = command.length > codeBlockMaxLen ? command.slice(0, codeBlockMaxLen) + '...(truncated)' : command;
         embed.addFields({ name: 'Command', value: `\`\`\`\n${escapeCodeBlock(truncated)}\n\`\`\``, inline: false });
         break;
       }
@@ -243,7 +244,7 @@ export class DiscordBot {
         // Show content preview for Write
         const content = String(toolInput.content || '');
         if (content) {
-          const preview = content.length > maxLen ? content.slice(0, maxLen) + '...' : content;
+          const preview = content.length > codeBlockMaxLen ? content.slice(0, codeBlockMaxLen) + '...(truncated)' : content;
           embed.addFields({ name: 'Content', value: `\`\`\`\n${escapeCodeBlock(preview)}\n\`\`\``, inline: false });
         }
         break;
@@ -283,7 +284,7 @@ export class DiscordBot {
       }
       default: {
         const jsonStr = JSON.stringify(toolInput);
-        const truncated = jsonStr.length > maxLen ? jsonStr.slice(0, maxLen) + '...' : jsonStr;
+        const truncated = jsonStr.length > codeBlockMaxLen ? jsonStr.slice(0, codeBlockMaxLen) + '...(truncated)' : jsonStr;
         embed.addFields({ name: 'Input', value: `\`\`\`json\n${escapeCodeBlock(truncated)}\n\`\`\``, inline: false });
       }
     }
