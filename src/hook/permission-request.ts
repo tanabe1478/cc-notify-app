@@ -2,7 +2,6 @@ import { WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 import type { HookInput, ApprovalRequest, ApprovalResponse, HookOutput } from '../shared/types.js';
 import { isHookInput, isApprovalResponse, createHookOutput } from '../shared/types.js';
-import { checkPermission } from './permission-checker.js';
 
 // Configuration
 const WEBSOCKET_URL = process.env.CC_NOTIFY_WS_URL || 'ws://localhost:3847';
@@ -137,22 +136,8 @@ async function main(): Promise<void> {
       return;
     }
 
-    // Check permission rules from settings
-    const decision = checkPermission(input.tool_name, input.tool_input, input.cwd);
-
-    if (decision === 'allow') {
-      // Auto-allow based on settings or default allowed tools
-      output(createHookOutput('allow'));
-      return;
-    }
-
-    if (decision === 'deny') {
-      // Auto-deny based on settings
-      output(createHookOutput('deny', 'Denied by permission rules'));
-      return;
-    }
-
-    // Ask: Request approval via Discord
+    // PermissionRequest hook: Claude Code already determined permission is needed
+    // Send to Discord for approval
     await requestApproval(input);
   } catch (error) {
     fallbackToAsk(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);

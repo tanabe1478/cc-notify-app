@@ -12,11 +12,15 @@ export interface HookInput {
 // Claude Code Hook Output Types
 export type PermissionDecision = 'allow' | 'deny' | 'ask';
 
+// PermissionRequest output format
 export interface HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'PreToolUse';
-    permissionDecision: PermissionDecision;
-    permissionDecisionReason?: string;
+    hookEventName: 'PermissionRequest';
+    decision: {
+      behavior: PermissionDecision;
+      updatedInput?: Record<string, unknown>;
+      message?: string;
+    };
   };
 }
 
@@ -73,9 +77,11 @@ export function isApprovalResponse(msg: unknown): msg is ApprovalResponse {
 export function createHookOutput(decision: PermissionDecision, reason?: string): HookOutput {
   return {
     hookSpecificOutput: {
-      hookEventName: 'PreToolUse',
-      permissionDecision: decision,
-      ...(reason && { permissionDecisionReason: reason }),
+      hookEventName: 'PermissionRequest',
+      decision: {
+        behavior: decision,
+        ...(reason && { message: reason }),
+      },
     },
   };
 }
