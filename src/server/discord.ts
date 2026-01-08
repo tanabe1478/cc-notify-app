@@ -17,6 +17,12 @@ import type { ApprovalRequest, PermissionDecision } from '../shared/types.js';
 
 type ApprovalCallback = (requestId: string, decision: PermissionDecision, message?: string) => void;
 
+// Escape backticks in content to prevent breaking Discord code blocks
+function escapeCodeBlock(content: string): string {
+  // Replace ``` with zero-width space between backticks to break the sequence
+  return content.replace(/```/g, '`\u200B`\u200B`');
+}
+
 export class DiscordBot {
   private client: Client;
   private channel: TextChannel | null = null;
@@ -201,7 +207,7 @@ export class DiscordBot {
       case 'Bash': {
         const command = String(toolInput.command || '(empty)');
         const truncated = command.length > maxLen ? command.slice(0, maxLen) + '...' : command;
-        embed.addFields({ name: 'Command', value: `\`\`\`\n${truncated}\n\`\`\``, inline: false });
+        embed.addFields({ name: 'Command', value: `\`\`\`\n${escapeCodeBlock(truncated)}\n\`\`\``, inline: false });
         break;
       }
       case 'Edit': {
@@ -225,7 +231,7 @@ export class DiscordBot {
             ? newLines.slice(0, diffMaxLen) + '\n...(truncated)'
             : newLines;
 
-          const diff = `\`\`\`diff\n${oldTruncated}\n${newTruncated}\n\`\`\``;
+          const diff = `\`\`\`diff\n${escapeCodeBlock(oldTruncated)}\n${escapeCodeBlock(newTruncated)}\n\`\`\``;
           embed.addFields({ name: 'Changes', value: diff, inline: false });
         }
         break;
@@ -238,7 +244,7 @@ export class DiscordBot {
         const content = String(toolInput.content || '');
         if (content) {
           const preview = content.length > maxLen ? content.slice(0, maxLen) + '...' : content;
-          embed.addFields({ name: 'Content', value: `\`\`\`\n${preview}\n\`\`\``, inline: false });
+          embed.addFields({ name: 'Content', value: `\`\`\`\n${escapeCodeBlock(preview)}\n\`\`\``, inline: false });
         }
         break;
       }
@@ -278,7 +284,7 @@ export class DiscordBot {
       default: {
         const jsonStr = JSON.stringify(toolInput);
         const truncated = jsonStr.length > maxLen ? jsonStr.slice(0, maxLen) + '...' : jsonStr;
-        embed.addFields({ name: 'Input', value: `\`\`\`json\n${truncated}\n\`\`\``, inline: false });
+        embed.addFields({ name: 'Input', value: `\`\`\`json\n${escapeCodeBlock(truncated)}\n\`\`\``, inline: false });
       }
     }
 
