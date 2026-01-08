@@ -19,6 +19,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ccnotify.app
+        PRODUCT_MODULE_NAME: CCNotify
+        DEFINES_MODULE: YES
         INFOPLIST_FILE: CCNotify/Info.plist
         CODE_SIGN_STYLE: Automatic
         ENABLE_HARDENED_RUNTIME: YES
@@ -33,3 +35,44 @@ targets:
       path: CCNotify/CCNotify.entitlements
       properties:
         com.apple.security.app-sandbox: false
+
+  CCNotifyTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - CCNotifyTests
+    dependencies:
+      - target: CCNotify
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ccnotify.tests
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/CC Notify.app/Contents/MacOS/CC Notify"
+
+  CCNotifyUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - CCNotifyUITests
+    dependencies:
+      - target: CCNotify
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ccnotify.uitests
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: CCNotify
+
+schemes:
+  CCNotify:
+    build:
+      targets:
+        CCNotify: all
+        CCNotifyTests: [test]
+        CCNotifyUITests: [test]
+    test:
+      targets:
+        - CCNotifyTests
+        - CCNotifyUITests

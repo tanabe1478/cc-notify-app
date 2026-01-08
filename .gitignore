@@ -4,3 +4,10 @@ dist/
 *.log
 .DS_Store
 .claude/settings.local.json
+
+# Xcode
+xcuserdata/
+*.xcworkspace
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
