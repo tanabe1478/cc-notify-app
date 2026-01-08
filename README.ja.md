@@ -32,9 +32,27 @@ Claude Code  ←  Hook レスポンス         ←  WebSocket Server  ←  Disco
 
 - **Discord 承認**: パーミッションリクエストを Discord に送信してリモート承認
 - **リッチ表示**: Edit は diff、Bash はコマンド、Write はファイルパスを表示
-- **承認/却下ボタン**: ワンクリックで承認または理由付き拒否
+- **3つの応答オプション**: Approve、Edit、Deny（フィードバック付き）
 - **macOS メニューバーアプリ**: メニューバーから簡単にサーバー管理
 - **タイムアウト**: 10分間応答がなければ Claude Code 側で確認
+
+## Discord ボタン
+
+| ボタン | 動作 |
+|--------|------|
+| **Approve** | リクエストをそのまま許可 |
+| **Edit** | 入力（コマンド、ファイルパス等）を修正して許可 |
+| **Deny** | フィードバックを付けて拒否、Claude が再考 |
+
+### Edit ボタン
+現在の入力がプリフィルされたモーダルを表示。以下を修正可能:
+- **Bash**: command
+- **Edit/Write/Read**: file_path
+- **WebFetch**: url
+- **その他**: JSON 全体
+
+### Deny ボタン
+フィードバックを入力できるモーダルを表示。Claude はこのフィードバックを受け取り、アプローチを再考します（ターミナルの「Type here to tell Claude to do it differently」と同等）。
 
 ## セットアップ
 

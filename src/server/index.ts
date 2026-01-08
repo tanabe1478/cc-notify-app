@@ -33,13 +33,13 @@ async function main(): Promise<void> {
     } catch (error) {
       console.error('[Server] Failed to send Discord message:', error);
       // Fallback to 'ask' if Discord fails
-      wsServer.respondToRequest(request.requestId, 'ask', 'Failed to send Discord notification');
+      wsServer.respondToRequest(request.requestId, 'ask', { message: 'Failed to send Discord notification' });
     }
   });
 
   // Connect Discord approval callbacks to WebSocket responses
-  discordBot.setApprovalCallback((requestId, decision, message) => {
-    const success = wsServer.respondToRequest(requestId, decision, message);
+  discordBot.setApprovalCallback((requestId, decision, options) => {
+    const success = wsServer.respondToRequest(requestId, decision, options);
     if (!success) {
       console.warn(`[Server] Could not respond to request ${requestId} - client may have disconnected`);
     }

@@ -32,9 +32,27 @@ Claude Code  ←  Hook Response          ←  WebSocket Server  ←  Discord Bot
 
 - **Discord Approval**: Permission requests are sent to Discord for remote approval
 - **Rich Display**: Shows diffs for Edit, commands for Bash, file paths for Write
-- **Approve/Deny Buttons**: One-click approval or denial with optional reason
+- **Three Response Options**: Approve, Edit, or Deny with feedback
 - **macOS Menu Bar App**: Easy server management from the menu bar
 - **Timeout**: Falls back to local prompt after 10 minutes
+
+## Discord Buttons
+
+| Button | Action |
+|--------|--------|
+| **Approve** | Allow the request as-is |
+| **Edit** | Modify the input (command, file path, etc.) and approve |
+| **Deny** | Reject with optional feedback for Claude to reconsider |
+
+### Edit Button
+Opens a modal with the current input pre-filled. You can modify:
+- **Bash**: command
+- **Edit/Write/Read**: file_path
+- **WebFetch**: url
+- **Others**: Full JSON input
+
+### Deny Button
+Opens a modal where you can provide feedback. Claude will receive this feedback and reconsider its approach (similar to terminal's "Type here to tell Claude to do it differently").
 
 ## Setup
 

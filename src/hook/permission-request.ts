@@ -86,7 +86,10 @@ async function requestApproval(input: HookInput): Promise<void> {
 
         if (isApprovalResponse(message) && message.requestId === requestId) {
           clearTimeout(timeout);
-          output(createHookOutput(message.decision, message.message));
+          output(createHookOutput(message.decision, {
+            updatedInput: message.updatedInput,
+            message: message.message,
+          }));
           ws.close();
           cleanup();
         }

@@ -15,7 +15,11 @@ import {
 } from 'discord.js';
 import type { ApprovalRequest, PermissionDecision } from '../shared/types.js';
 
-type ApprovalCallback = (requestId: string, decision: PermissionDecision, message?: string) => void;
+type ApprovalCallback = (
+  requestId: string,
+  decision: PermissionDecision,
+  options?: { updatedInput?: Record<string, unknown>; message?: string }
+) => void;
 
 // Escape backticks in content to prevent breaking Discord code blocks
 function escapeCodeBlock(content: string): string {
@@ -30,6 +34,8 @@ export class DiscordBot {
 
   // Map to track which messages correspond to which requests
   private messageToRequest: Map<string, string> = new Map();
+  // Store original request data for Edit modal
+  private requestData: Map<string, { toolName: string; toolInput: Record<string, unknown> }> = new Map();
 
   constructor(
     private token: string,
@@ -68,21 +74,67 @@ export class DiscordBot {
 
     if (action === 'approve') {
       await this.processDecision(interaction, requestId, 'allow', 'Approved');
+    } else if (action === 'edit') {
+      // Show modal to edit input
+      const data = this.requestData.get(requestId);
+      if (!data) {
+        await interaction.reply({ content: 'Request data not found', ephemeral: true });
+        return;
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId(`edit_modal:${requestId}`)
+        .setTitle('Edit & Approve');
+
+      // Get the editable value based on tool type
+      let currentValue = '';
+      let label = 'Input';
+      if (data.toolName === 'Bash') {
+        currentValue = String(data.toolInput.command || '');
+        label = 'Command';
+      } else if (data.toolName === 'Edit' || data.toolName === 'Write' || data.toolName === 'Read') {
+        currentValue = String(data.toolInput.file_path || '');
+        label = 'File Path';
+      } else if (data.toolName === 'WebFetch') {
+        currentValue = String(data.toolInput.url || '');
+        label = 'URL';
+      } else {
+        currentValue = JSON.stringify(data.toolInput, null, 2);
+        label = 'Input (JSON)';
+      }
+
+      // Truncate if too long for modal (max 4000 chars)
+      if (currentValue.length > 4000) {
+        currentValue = currentValue.slice(0, 4000);
+      }
+
+      const inputField = new TextInputBuilder()
+        .setCustomId('edited_input')
+        .setLabel(label)
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setValue(currentValue)
+        .setMaxLength(4000);
+
+      const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(inputField);
+      modal.addComponents(actionRow);
+
+      await interaction.showModal(modal);
     } else if (action === 'deny') {
-      // Show modal for deny reason
+      // Show modal for feedback
       const modal = new ModalBuilder()
         .setCustomId(`deny_modal:${requestId}`)
-        .setTitle('Deny Permission Request');
+        .setTitle('Deny with Feedback');
 
-      const reasonInput = new TextInputBuilder()
-        .setCustomId('deny_reason')
-        .setLabel('Reason for denial (optional)')
+      const feedbackInput = new TextInputBuilder()
+        .setCustomId('feedback')
+        .setLabel('Feedback for Claude (optional)')
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(false)
-        .setMaxLength(500)
-        .setPlaceholder('Enter reason...');
+        .setMaxLength(1000)
+        .setPlaceholder('Tell Claude what to do differently...');
 
-      const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
+      const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(feedbackInput);
       modal.addComponents(actionRow);
 
       await interaction.showModal(modal);
@@ -91,12 +143,43 @@ export class DiscordBot {
 
   private async handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
     const [action, requestId] = interaction.customId.split(':');
-    if (action !== 'deny_modal' || !requestId) return;
+    if (!requestId) return;
 
-    const reason = interaction.fields.getTextInputValue('deny_reason') || undefined;
-    console.log(`[Discord] Deny modal submitted for ${requestId}, reason: ${reason || '(none)'}`);
+    if (action === 'edit_modal') {
+      const editedInput = interaction.fields.getTextInputValue('edited_input');
+      const data = this.requestData.get(requestId);
 
-    await this.processDecision(interaction, requestId, 'deny', 'Denied', reason);
+      if (!data) {
+        await interaction.reply({ content: 'Request data not found', ephemeral: true });
+        return;
+      }
+
+      console.log(`[Discord] Edit modal submitted for ${requestId}`);
+
+      // Build updatedInput based on tool type
+      let updatedInput: Record<string, unknown>;
+      if (data.toolName === 'Bash') {
+        updatedInput = { ...data.toolInput, command: editedInput };
+      } else if (data.toolName === 'Edit' || data.toolName === 'Write' || data.toolName === 'Read') {
+        updatedInput = { ...data.toolInput, file_path: editedInput };
+      } else if (data.toolName === 'WebFetch') {
+        updatedInput = { ...data.toolInput, url: editedInput };
+      } else {
+        // Try to parse as JSON, fall back to original
+        try {
+          updatedInput = JSON.parse(editedInput);
+        } catch {
+          updatedInput = data.toolInput;
+        }
+      }
+
+      await this.processDecision(interaction, requestId, 'allow', 'Edited & Approved', { updatedInput });
+    } else if (action === 'deny_modal') {
+      const feedback = interaction.fields.getTextInputValue('feedback') || undefined;
+      console.log(`[Discord] Deny modal submitted for ${requestId}, feedback: ${feedback || '(none)'}`);
+
+      await this.processDecision(interaction, requestId, 'deny', 'Denied', { message: feedback });
+    }
   }
 
   private async processDecision(
@@ -104,7 +187,7 @@ export class DiscordBot {
     requestId: string,
     decision: PermissionDecision,
     buttonText: string,
-    message?: string
+    options?: { updatedInput?: Record<string, unknown>; message?: string }
   ): Promise<void> {
     // Update the message to show the decision
     try {
@@ -119,10 +202,7 @@ export class DiscordBot {
       const embed = EmbedBuilder.from(originalMessage.embeds[0]);
       embed.setColor(decision === 'allow' ? 0x00ff00 : 0xff0000);
 
-      let footerText = `${buttonText} by ${interaction.user.tag}`;
-      if (message) {
-        footerText += ` - "${message}"`;
-      }
+      const footerText = `${buttonText} by ${interaction.user.tag}`;
       embed.setFooter({ text: footerText });
 
       // Disable all buttons
@@ -131,6 +211,11 @@ export class DiscordBot {
           .setCustomId('approve:disabled')
           .setLabel('Approve')
           .setStyle(ButtonStyle.Success)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId('edit:disabled')
+          .setLabel('Edit')
+          .setStyle(ButtonStyle.Primary)
           .setDisabled(true),
         new ButtonBuilder()
           .setCustomId('deny:disabled')
@@ -153,16 +238,15 @@ export class DiscordBot {
       }
     } catch (error) {
       console.error('[Discord] Failed to update message:', error);
-      if (interaction.isModalSubmit()) {
-        await interaction.reply({ content: `${buttonText}!`, ephemeral: true }).catch(() => {});
-      } else {
-        await interaction.reply({ content: `${buttonText}!`, ephemeral: true }).catch(() => {});
-      }
+      await interaction.reply({ content: `${buttonText}!`, ephemeral: true }).catch(() => {});
     }
+
+    // Clean up stored request data
+    this.requestData.delete(requestId);
 
     // Notify the callback
     if (this.onApproval) {
-      this.onApproval(requestId, decision, message);
+      this.onApproval(requestId, decision, options);
     }
   }
 
@@ -302,10 +386,20 @@ export class DiscordBot {
         .setLabel('Approve')
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
+        .setCustomId(`edit:${request.requestId}`)
+        .setLabel('Edit')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
         .setCustomId(`deny:${request.requestId}`)
         .setLabel('Deny')
         .setStyle(ButtonStyle.Danger)
     );
+
+    // Store request data for Edit modal
+    this.requestData.set(request.requestId, {
+      toolName: request.toolName,
+      toolInput: request.toolInput,
+    });
 
     const message = await this.channel.send({
       embeds: [embed],
