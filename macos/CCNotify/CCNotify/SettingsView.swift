@@ -49,6 +49,28 @@ struct SettingsView: View {
                     }
                 }
 
+                if let error = serverManager.lastError {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.yellow)
+                        Text(error.message)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                        Spacer()
+                        Button {
+                            serverManager.lastError = nil
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(8)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(6)
+                    .accessibilityIdentifier("settingsErrorBanner")
+                }
+
                 if serverManager.isRunning {
                     Button("Stop Server") {
                         serverManager.stop()

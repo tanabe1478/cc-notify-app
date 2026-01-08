@@ -14,7 +14,6 @@ import {
   type ModalSubmitInteraction,
 } from 'discord.js';
 import type { ApprovalRequest, PermissionDecision } from '../shared/types.js';
-import { formatToolDescription } from '../shared/types.js';
 
 type ApprovalCallback = (requestId: string, decision: PermissionDecision, message?: string) => void;
 
@@ -189,22 +188,106 @@ export class DiscordBot {
       throw new Error('Discord bot not connected to a channel');
     }
 
-    const toolDescription = formatToolDescription(request.toolName, request.toolInput);
-
-    // Truncate long descriptions
-    const maxLen = 1000;
-    const description =
-      toolDescription.length > maxLen ? toolDescription.slice(0, maxLen) + '...' : toolDescription;
-
     const embed = new EmbedBuilder()
-      .setTitle(`Permission Request: ${request.toolName}`)
-      .setDescription(description)
+      .setTitle('Permission Request')
       .setColor(0x0099ff)
-      .addFields(
-        { name: 'Working Directory', value: `\`${request.cwd}\``, inline: true },
-        { name: 'Session', value: request.sessionId.slice(0, 8), inline: true }
-      )
-      .setTimestamp(request.timestamp);
+      .addFields({ name: 'Tool', value: `\`${request.toolName}\``, inline: false });
+
+    // Add tool-specific details
+    const toolInput = request.toolInput;
+    const maxLen = 500;
+
+    switch (request.toolName) {
+      case 'Bash': {
+        const command = String(toolInput.command || '(empty)');
+        const truncated = command.length > maxLen ? command.slice(0, maxLen) + '...' : command;
+        embed.addFields({ name: 'Command', value: `\`\`\`\n${truncated}\n\`\`\``, inline: false });
+        break;
+      }
+      case 'Edit': {
+        const filePath = String(toolInput.file_path || '(unknown)');
+        embed.addFields({ name: 'File', value: `\`${filePath}\``, inline: false });
+
+        // Show diff
+        const oldStr = String(toolInput.old_string || '');
+        const newStr = String(toolInput.new_string || '');
+        const diffMaxLen = 400;
+
+        if (oldStr || newStr) {
+          // Create diff-like display
+          const oldLines = oldStr.split('\n').map(line => `- ${line}`).join('\n');
+          const newLines = newStr.split('\n').map(line => `+ ${line}`).join('\n');
+
+          const oldTruncated = oldLines.length > diffMaxLen
+            ? oldLines.slice(0, diffMaxLen) + '\n...(truncated)'
+            : oldLines;
+          const newTruncated = newLines.length > diffMaxLen
+            ? newLines.slice(0, diffMaxLen) + '\n...(truncated)'
+            : newLines;
+
+          const diff = `\`\`\`diff\n${oldTruncated}\n${newTruncated}\n\`\`\``;
+          embed.addFields({ name: 'Changes', value: diff, inline: false });
+        }
+        break;
+      }
+      case 'Write': {
+        const filePath = String(toolInput.file_path || '(unknown)');
+        embed.addFields({ name: 'File', value: `\`${filePath}\``, inline: false });
+
+        // Show content preview for Write
+        const content = String(toolInput.content || '');
+        if (content) {
+          const preview = content.length > maxLen ? content.slice(0, maxLen) + '...' : content;
+          embed.addFields({ name: 'Content', value: `\`\`\`\n${preview}\n\`\`\``, inline: false });
+        }
+        break;
+      }
+      case 'Read': {
+        const filePath = String(toolInput.file_path || '(unknown)');
+        embed.addFields({ name: 'File', value: `\`${filePath}\``, inline: false });
+        break;
+      }
+      case 'WebFetch': {
+        const url = String(toolInput.url || '(unknown)');
+        embed.addFields({ name: 'URL', value: `\`${url}\``, inline: false });
+        break;
+      }
+      case 'Task': {
+        const description = String(toolInput.description || '(no description)');
+        embed.addFields({ name: 'Description', value: description, inline: false });
+        break;
+      }
+      case 'Grep': {
+        const pattern = String(toolInput.pattern || '(unknown)');
+        const path = toolInput.path ? String(toolInput.path) : '(cwd)';
+        embed.addFields(
+          { name: 'Pattern', value: `\`${pattern}\``, inline: true },
+          { name: 'Path', value: `\`${path}\``, inline: true }
+        );
+        break;
+      }
+      case 'Glob': {
+        const pattern = String(toolInput.pattern || '(unknown)');
+        const path = toolInput.path ? String(toolInput.path) : '(cwd)';
+        embed.addFields(
+          { name: 'Pattern', value: `\`${pattern}\``, inline: true },
+          { name: 'Path', value: `\`${path}\``, inline: true }
+        );
+        break;
+      }
+      default: {
+        const jsonStr = JSON.stringify(toolInput);
+        const truncated = jsonStr.length > maxLen ? jsonStr.slice(0, maxLen) + '...' : jsonStr;
+        embed.addFields({ name: 'Input', value: `\`\`\`json\n${truncated}\n\`\`\``, inline: false });
+      }
+    }
+
+    embed.addFields(
+      { name: 'Working Directory', value: `\`${request.cwd}\``, inline: true },
+      { name: 'Session', value: request.sessionId.slice(0, 8), inline: true }
+    );
+
+    embed.setTimestamp(request.timestamp);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()

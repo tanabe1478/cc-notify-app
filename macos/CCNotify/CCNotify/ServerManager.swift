@@ -43,12 +43,36 @@ import SwiftUI
 class ServerManager: ObservableObject {
     @Published var isRunning = false
     @Published var recentRequests: [ApprovalRequest] = []
+    @Published var lastError: ServerError?
 
     @AppStorage("serverPath") var serverPath: String = ""
     @AppStorage("autoStart") var autoStart: Bool = false
 
     private var process: Process?
     private var outputPipe: Pipe?
+
+    enum ServerError: Equatable {
+        case pathNotConfigured
+        case pathNotFound(String)
+        case portInUse(Int)
+        case processStartFailed(String)
+        case unexpectedTermination(String)
+
+        var message: String {
+            switch self {
+            case .pathNotConfigured:
+                return "Server path not configured"
+            case .pathNotFound(let path):
+                return "Server file not found: \(path)"
+            case .portInUse(let port):
+                return "Port \(port) is already in use. Another server instance may be running."
+            case .processStartFailed(let reason):
+                return "Failed to start server: \(reason)"
+            case .unexpectedTermination(let reason):
+                return "Server terminated unexpectedly: \(reason)"
+            }
+        }
+    }
 
     init() {
         // Auto-detect server path if not set
@@ -99,19 +123,37 @@ class ServerManager: ObservableObject {
     }
 
     func start() {
+        // Clear previous error
+        lastError = nil
+
         guard !isRunning else { return }
+
         guard !serverPath.isEmpty else {
-            print("Server path not configured")
+            lastError = .pathNotConfigured
+            return
+        }
+
+        // Check if server file exists
+        guard FileManager.default.fileExists(atPath: serverPath) else {
+            lastError = .pathNotFound(serverPath)
+            return
+        }
+
+        // Check if port is already in use
+        let port = 3847 // Default WebSocket port
+        if isPortInUse(port: port) {
+            lastError = .portInUse(port)
             return
         }
 
         let process = Process()
         let pipe = Pipe()
+        let errorPipe = Pipe()
 
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = ["node", serverPath]
         process.standardOutput = pipe
-        process.standardError = pipe
+        process.standardError = errorPipe
 
         // Set environment variables from .env file
         var environment = ProcessInfo.processInfo.environment
@@ -134,10 +176,26 @@ class ServerManager: ObservableObject {
             }
         }
 
-        process.terminationHandler = { [weak self] _ in
+        // Capture stderr for error reporting
+        errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            if let output = String(data: data, encoding: .utf8), !output.isEmpty {
+                Task { @MainActor in
+                    self?.handleErrorOutput(output)
+                }
+            }
+        }
+
+        process.terminationHandler = { [weak self] terminatedProcess in
             Task { @MainActor in
                 self?.isRunning = false
                 self?.process = nil
+
+                // Check if termination was unexpected
+                let exitCode = terminatedProcess.terminationStatus
+                if exitCode != 0 && exitCode != 15 { // 15 = SIGTERM (normal stop)
+                    self?.lastError = .unexpectedTermination("Exit code: \(exitCode)")
+                }
             }
         }
 
@@ -147,8 +205,38 @@ class ServerManager: ObservableObject {
             self.outputPipe = pipe
             isRunning = true
         } catch {
-            print("Failed to start server: \(error)")
+            lastError = .processStartFailed(error.localizedDescription)
         }
+    }
+
+    private func isPortInUse(port: Int) -> Bool {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        task.arguments = ["-i", ":\(port)"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = pipe
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return !data.isEmpty
+        } catch {
+            return false
+        }
+    }
+
+    private func handleErrorOutput(_ output: String) {
+        // Check for common error patterns
+        if output.contains("EADDRINUSE") {
+            lastError = .portInUse(3847)
+        } else if output.contains("Cannot find module") || output.contains("MODULE_NOT_FOUND") {
+            lastError = .pathNotFound(serverPath)
+        }
+        // Also pass to regular output parser for logging
+        parseOutput(output)
     }
 
     func stop() {
