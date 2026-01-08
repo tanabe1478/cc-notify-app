@@ -6,24 +6,34 @@ Claude Code の Permission Request を Discord に通知し、リモートから
 
 ## 概要
 
-Claude Code の `PreToolUse` hook と連携し、ツール実行前にインターセプト。
-パーミッション設定をチェックし、承認が必要なツールのみ Discord に通知します。
+Claude Code の `PermissionRequest` hook と連携し、パーミッションダイアログをインターセプト。
+Claude Code が承認を必要とするとき、リクエストを Discord に送信してリモートから承認/却下できます。
 
 ```
-Claude Code  →  PreToolUse Hook  →  パーミッションチェック  →  Discord Bot  →  Discord
-                                          ↓                                      ↓
-                                    自動 allow/deny                         ボタンクリック
-                                    (設定に基づく)                                ↓
-Claude Code  ←  Hook レスポンス   ←  WebSocket Server   ←  Discord Bot
+Claude Code  →  PermissionRequest Hook  →  Discord Bot  →  Discord
+                                                              ↓
+                                                        ボタンクリック
+                                                              ↓
+Claude Code  ←  Hook レスポンス         ←  WebSocket Server  ←  Discord Bot
 ```
+
+## スクリーンショット
+
+### macOS メニューバーアプリ
+<img src="docs/images/macos-menubar-app.png" width="300" alt="macOS Menu Bar App">
+
+### Discord - Bash コマンドリクエスト
+<img src="docs/images/discord-bash-request.jpg" width="400" alt="Discord Bash Command Request">
+
+### Discord - Edit の diff 表示
+<img src="docs/images/discord-edit-diff.jpg" width="400" alt="Discord Edit Diff Display">
 
 ## 機能
 
-- **スマートパーミッションチェック**: Claude Code の `settings.json` から allow/deny/ask ルールを読み込み
-- **デフォルト許可ツール**: 読み取り専用ツール（Read, Glob, Grep 等）は自動承認
-- **Discord 承認**: allow リストにないツールは Discord で承認を要求
+- **Discord 承認**: パーミッションリクエストを Discord に送信してリモート承認
 - **リッチ表示**: Edit は diff、Bash はコマンド、Write はファイルパスを表示
 - **承認/却下ボタン**: ワンクリックで承認または理由付き拒否
+- **macOS メニューバーアプリ**: メニューバーから簡単にサーバー管理
 - **タイムアウト**: 10分間応答がなければ Claude Code 側で確認
 
 ## セットアップ
@@ -75,7 +85,7 @@ DISCORD_CHANNEL_ID=<通知先チャンネルID>
 ```json
 {
   "hooks": {
-    "PreToolUse": [
+    "PermissionRequest": [
       {
         "matcher": "",
         "hooks": [
@@ -100,54 +110,15 @@ DISCORD_CHANNEL_ID=<通知先チャンネルID>
 | `.claude/settings.json` | チームで共有（Git 管理） |
 | `.claude/settings.local.json` | 個人用（.gitignore 推奨） |
 
-## パーミッションチェックの仕組み
+## 仕組み
 
-Hook は Claude Code の設定ファイルからパーミッションルールを読み込みます（優先順）:
-1. `~/.claude/settings.json` (グローバル)
-2. `~/.claude/settings.local.json` (グローバルローカル)
-3. `.claude/settings.json` (プロジェクト)
-4. `.claude/settings.local.json` (プロジェクトローカル)
+`PermissionRequest` hook は Claude Code がツール実行の許可を必要とするときにトリガーされます。
+ローカルのダイアログを表示する代わりに、リクエストを Discord に送信してリモートから承認/却下できます。
 
-### 判定ロジック
-
-1. **deny リストにマッチ** → 自動拒否（Discord 通知なし）
-2. **allow リストにマッチ** → 自動許可（Discord 通知なし）
-3. **ask リストにマッチ** → Discord で承認を要求
-4. **デフォルト許可ツール** → 自動許可（Discord 通知なし）
-5. **それ以外** → Discord で承認を要求
-
-### デフォルト許可ツール
-
-以下の読み取り専用ツールは Discord 通知なしで自動承認:
-- `Read` - ファイル読み込み
-- `Glob` - ファイルパターンマッチング
-- `Grep` - コンテンツ検索
-- `Task` - サブエージェント起動
-- `WebSearch` - Web 検索
-- `TodoRead` / `TodoWrite` - Todo 管理
-- `AskUserQuestion` - ユーザープロンプト
-
-### パーミッション設定例
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(git status:*)"
-    ],
-    "deny": [
-      "Bash(sudo:*)",
-      "Bash(rm -rf:*)"
-    ],
-    "ask": [
-      "Bash(git push:*)",
-      "Bash(curl:*)"
-    ]
-  }
-}
-```
+Claude Code の既存のパーミッションシステムとシームレスに連携:
+- `allow` リストのツールはプロンプトなしで実行
+- `deny` リストのツールはプロンプトなしで拒否
+- 許可が必要なツールは Hook をトリガーして Discord に送信
 
 ## 使い方
 
@@ -283,7 +254,7 @@ pnpm build
 pnpm dev:server
 
 # Hook を手動テスト
-echo '{"session_id":"test","cwd":"/tmp","permission_mode":"default","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | ./scripts/hook-wrapper.sh
+echo '{"session_id":"test","cwd":"/tmp","permission_mode":"default","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"ls"}}' | ./scripts/hook-wrapper.sh
 ```
 
 ## ライセンス
