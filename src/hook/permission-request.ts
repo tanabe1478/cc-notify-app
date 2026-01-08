@@ -1,12 +1,15 @@
 import { WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
-import type { HookInput, ApprovalRequest, ApprovalResponse, HookOutput } from '../shared/types.js';
+import type { HookInput, ApprovalRequest, ApprovalResponse, HookOutput, HookEventName } from '../shared/types.js';
 import { isHookInput, isApprovalResponse, createHookOutput } from '../shared/types.js';
 import { checkPermission } from './permission-checker.js';
 
 // Configuration
 const WEBSOCKET_URL = process.env.CC_NOTIFY_WS_URL || 'ws://localhost:3847';
 const REQUEST_TIMEOUT = parseInt(process.env.CC_NOTIFY_TIMEOUT || '600000', 10); // 600 seconds
+
+// Current hook event name (set from input)
+let currentHookEventName: HookEventName = 'PreToolUse';
 
 function readStdin(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -36,9 +39,13 @@ function output(result: HookOutput): void {
   console.log(JSON.stringify(result));
 }
 
+function outputDecision(decision: 'allow' | 'deny' | 'ask', reason?: string): void {
+  output(createHookOutput(currentHookEventName, decision, reason));
+}
+
 function fallbackToAsk(reason: string): void {
   console.error(`[Hook] ${reason}`);
-  output(createHookOutput('ask'));
+  outputDecision('ask');
 }
 
 async function requestApproval(input: HookInput): Promise<void> {
@@ -87,7 +94,7 @@ async function requestApproval(input: HookInput): Promise<void> {
 
         if (isApprovalResponse(message) && message.requestId === requestId) {
           clearTimeout(timeout);
-          output(createHookOutput(message.decision, message.message));
+          outputDecision(message.decision, message.message);
           ws.close();
           cleanup();
         }
@@ -137,18 +144,31 @@ async function main(): Promise<void> {
       return;
     }
 
-    // Check permission rules from settings
+    // Set the hook event name for output formatting
+    if (input.hook_event_name === 'PermissionRequest' || input.hook_event_name === 'PreToolUse') {
+      currentHookEventName = input.hook_event_name;
+    }
+
+    // For PermissionRequest, we don't need to check permissions again
+    // because Claude Code already determined that permission is needed.
+    // Just send to Discord for approval.
+    if (currentHookEventName === 'PermissionRequest') {
+      await requestApproval(input);
+      return;
+    }
+
+    // For PreToolUse, check permission rules from settings
     const decision = checkPermission(input.tool_name, input.tool_input, input.cwd);
 
     if (decision === 'allow') {
       // Auto-allow based on settings or default allowed tools
-      output(createHookOutput('allow'));
+      outputDecision('allow');
       return;
     }
 
     if (decision === 'deny') {
       // Auto-deny based on settings
-      output(createHookOutput('deny', 'Denied by permission rules'));
+      outputDecision('deny', 'Denied by permission rules');
       return;
     }
 

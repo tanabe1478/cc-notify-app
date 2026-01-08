@@ -12,13 +12,28 @@ export interface HookInput {
 // Claude Code Hook Output Types
 export type PermissionDecision = 'allow' | 'deny' | 'ask';
 
-export interface HookOutput {
+// PreToolUse output format
+export interface PreToolUseOutput {
   hookSpecificOutput?: {
     hookEventName: 'PreToolUse';
     permissionDecision: PermissionDecision;
     permissionDecisionReason?: string;
   };
 }
+
+// PermissionRequest output format
+export interface PermissionRequestOutput {
+  hookSpecificOutput?: {
+    hookEventName: 'PermissionRequest';
+    decision: {
+      behavior: PermissionDecision;
+      updatedInput?: Record<string, unknown>;
+      message?: string;
+    };
+  };
+}
+
+export type HookOutput = PreToolUseOutput | PermissionRequestOutput;
 
 // WebSocket Message Types
 export interface ApprovalRequest {
@@ -70,7 +85,26 @@ export function isApprovalResponse(msg: unknown): msg is ApprovalResponse {
 }
 
 // Utility Functions
-export function createHookOutput(decision: PermissionDecision, reason?: string): HookOutput {
+export type HookEventName = 'PreToolUse' | 'PermissionRequest';
+
+export function createHookOutput(
+  hookEventName: HookEventName,
+  decision: PermissionDecision,
+  reason?: string
+): HookOutput {
+  if (hookEventName === 'PermissionRequest') {
+    return {
+      hookSpecificOutput: {
+        hookEventName: 'PermissionRequest',
+        decision: {
+          behavior: decision,
+          ...(reason && { message: reason }),
+        },
+      },
+    };
+  }
+
+  // PreToolUse format
   return {
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
