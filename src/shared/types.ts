@@ -39,6 +39,7 @@ export interface ApprovalResponse {
   type: 'approval_response';
   requestId: string;
   decision: PermissionDecision;
+  updatedInput?: Record<string, unknown>;
   message?: string;
 }
 
@@ -74,13 +75,17 @@ export function isApprovalResponse(msg: unknown): msg is ApprovalResponse {
 }
 
 // Utility Functions
-export function createHookOutput(decision: PermissionDecision, reason?: string): HookOutput {
+export function createHookOutput(
+  decision: PermissionDecision,
+  options?: { updatedInput?: Record<string, unknown>; message?: string }
+): HookOutput {
   return {
     hookSpecificOutput: {
       hookEventName: 'PermissionRequest',
       decision: {
         behavior: decision,
-        ...(reason && { message: reason }),
+        ...(options?.updatedInput && { updatedInput: options.updatedInput }),
+        ...(options?.message && { message: options.message }),
       },
     },
   };

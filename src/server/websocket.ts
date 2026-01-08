@@ -3,10 +3,15 @@ import { EventEmitter } from 'events';
 import type { ApprovalRequest, ApprovalResponse, PermissionDecision } from '../shared/types.js';
 import { isApprovalRequest, isApprovalResponse } from '../shared/types.js';
 
+interface ResponseOptions {
+  updatedInput?: Record<string, unknown>;
+  message?: string;
+}
+
 interface PendingRequest {
   ws: WebSocket;
   request: ApprovalRequest;
-  resolve: (decision: PermissionDecision, message?: string) => void;
+  resolve: (decision: PermissionDecision, options?: ResponseOptions) => void;
 }
 
 export class ApprovalWebSocketServer extends EventEmitter {
@@ -72,8 +77,8 @@ export class ApprovalWebSocketServer extends EventEmitter {
         this.pendingRequests.set(message.requestId, {
           ws,
           request: message,
-          resolve: (decision, msg) => {
-            this.sendResponse(ws, message.requestId, decision, msg);
+          resolve: (decision, options) => {
+            this.sendResponse(ws, message.requestId, decision, options);
           },
         });
 
@@ -87,29 +92,39 @@ export class ApprovalWebSocketServer extends EventEmitter {
     }
   }
 
-  respondToRequest(requestId: string, decision: PermissionDecision, message?: string): boolean {
+  respondToRequest(
+    requestId: string,
+    decision: PermissionDecision,
+    options?: ResponseOptions
+  ): boolean {
     const pending = this.pendingRequests.get(requestId);
     if (!pending) {
       console.warn(`[WebSocket] No pending request found: ${requestId}`);
       return false;
     }
 
-    pending.resolve(decision, message);
+    pending.resolve(decision, options);
     this.pendingRequests.delete(requestId);
     return true;
   }
 
-  private sendResponse(ws: WebSocket, requestId: string, decision: PermissionDecision, message?: string): void {
+  private sendResponse(
+    ws: WebSocket,
+    requestId: string,
+    decision: PermissionDecision,
+    options?: ResponseOptions
+  ): void {
     const response: ApprovalResponse = {
       type: 'approval_response',
       requestId,
       decision,
-      ...(message && { message }),
+      ...(options?.updatedInput && { updatedInput: options.updatedInput }),
+      ...(options?.message && { message: options.message }),
     };
 
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(response));
-      console.log(`[WebSocket] Sent response for ${requestId}: ${decision}`);
+      console.log(`[WebSocket] Sent response for ${requestId}: ${decision}${options?.updatedInput ? ' (with updated input)' : ''}`);
     } else {
       console.error(`[WebSocket] Cannot send response, connection not open`);
     }
@@ -127,7 +142,7 @@ export class ApprovalWebSocketServer extends EventEmitter {
     if (this.wss) {
       // Respond to all pending requests with 'ask' before closing
       for (const [requestId, pending] of this.pendingRequests) {
-        pending.resolve('ask', 'Server shutting down');
+        pending.resolve('ask', { message: 'Server shutting down' });
       }
       this.pendingRequests.clear();
 
