@@ -121,43 +121,65 @@ export class DiscordBot {
 
       await interaction.showModal(modal);
     } else if (action === 'deny') {
-      // Deny directly without modal
-      await this.processDecision(interaction, requestId, 'deny', 'Denied');
+      // Show modal for feedback
+      const modal = new ModalBuilder()
+        .setCustomId(`deny_modal:${requestId}`)
+        .setTitle('Deny with Feedback');
+
+      const feedbackInput = new TextInputBuilder()
+        .setCustomId('feedback')
+        .setLabel('Feedback for Claude (optional)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false)
+        .setMaxLength(1000)
+        .setPlaceholder('Tell Claude what to do differently...');
+
+      const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(feedbackInput);
+      modal.addComponents(actionRow);
+
+      await interaction.showModal(modal);
     }
   }
 
   private async handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
     const [action, requestId] = interaction.customId.split(':');
-    if (action !== 'edit_modal' || !requestId) return;
+    if (!requestId) return;
 
-    const editedInput = interaction.fields.getTextInputValue('edited_input');
-    const data = this.requestData.get(requestId);
+    if (action === 'edit_modal') {
+      const editedInput = interaction.fields.getTextInputValue('edited_input');
+      const data = this.requestData.get(requestId);
 
-    if (!data) {
-      await interaction.reply({ content: 'Request data not found', ephemeral: true });
-      return;
-    }
-
-    console.log(`[Discord] Edit modal submitted for ${requestId}`);
-
-    // Build updatedInput based on tool type
-    let updatedInput: Record<string, unknown>;
-    if (data.toolName === 'Bash') {
-      updatedInput = { ...data.toolInput, command: editedInput };
-    } else if (data.toolName === 'Edit' || data.toolName === 'Write' || data.toolName === 'Read') {
-      updatedInput = { ...data.toolInput, file_path: editedInput };
-    } else if (data.toolName === 'WebFetch') {
-      updatedInput = { ...data.toolInput, url: editedInput };
-    } else {
-      // Try to parse as JSON, fall back to original
-      try {
-        updatedInput = JSON.parse(editedInput);
-      } catch {
-        updatedInput = data.toolInput;
+      if (!data) {
+        await interaction.reply({ content: 'Request data not found', ephemeral: true });
+        return;
       }
-    }
 
-    await this.processDecision(interaction, requestId, 'allow', 'Edited & Approved', { updatedInput });
+      console.log(`[Discord] Edit modal submitted for ${requestId}`);
+
+      // Build updatedInput based on tool type
+      let updatedInput: Record<string, unknown>;
+      if (data.toolName === 'Bash') {
+        updatedInput = { ...data.toolInput, command: editedInput };
+      } else if (data.toolName === 'Edit' || data.toolName === 'Write' || data.toolName === 'Read') {
+        updatedInput = { ...data.toolInput, file_path: editedInput };
+      } else if (data.toolName === 'WebFetch') {
+        updatedInput = { ...data.toolInput, url: editedInput };
+      } else {
+        // Try to parse as JSON, fall back to original
+        try {
+          updatedInput = JSON.parse(editedInput);
+        } catch {
+          updatedInput = data.toolInput;
+        }
+      }
+
+      await this.processDecision(interaction, requestId, 'allow', 'Edited & Approved', { updatedInput });
+    } else if (action === 'deny_modal') {
+      const feedback = interaction.fields.getTextInputValue('feedback') || undefined;
+      console.log(`[Discord] Deny modal submitted for ${requestId}, feedback: ${feedback || '(none)'}`);
+
+      await this.processDecision(interaction, requestId, 'deny', 'Denied', { message: feedback });
+    }
   }
 
   private async processDecision(
