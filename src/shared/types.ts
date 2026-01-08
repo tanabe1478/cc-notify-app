@@ -12,17 +12,11 @@ export interface HookInput {
 // Claude Code Hook Output Types
 export type PermissionDecision = 'allow' | 'deny' | 'ask';
 
-export interface HookOutputDecision {
-  behavior: PermissionDecision;
-  message?: string;
-  interrupt?: boolean;
-  updatedInput?: Record<string, unknown>;
-}
-
 export interface HookOutput {
   hookSpecificOutput?: {
-    hookEventName: 'PermissionRequest';
-    decision: HookOutputDecision;
+    hookEventName: 'PreToolUse';
+    permissionDecision: PermissionDecision;
+    permissionDecisionReason?: string;
   };
 }
 
@@ -76,14 +70,12 @@ export function isApprovalResponse(msg: unknown): msg is ApprovalResponse {
 }
 
 // Utility Functions
-export function createHookOutput(decision: PermissionDecision, message?: string): HookOutput {
+export function createHookOutput(decision: PermissionDecision, reason?: string): HookOutput {
   return {
     hookSpecificOutput: {
-      hookEventName: 'PermissionRequest',
-      decision: {
-        behavior: decision,
-        ...(message && { message }),
-      },
+      hookEventName: 'PreToolUse',
+      permissionDecision: decision,
+      ...(reason && { permissionDecisionReason: reason }),
     },
   };
 }

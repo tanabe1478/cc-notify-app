@@ -6,21 +6,24 @@ Claude Code の Permission Request を Discord に通知し、リモートから
 
 ## 概要
 
-Claude Code が権限を要求するたびに Discord にボタン付きメッセージを送信。
-外出先や別のデバイスからでも承認/却下が可能。
+Claude Code の `PreToolUse` hook と連携し、ツール実行前にインターセプト。
+パーミッション設定をチェックし、承認が必要なツールのみ Discord に通知します。
 
 ```
-Claude Code  →  Hook Script  →  WebSocket  →  Discord Bot  →  Discord
-                                                    ↓
-                                              ボタンクリック
-                                                    ↓
-Claude Code  ←  Hook Script  ←  WebSocket  ←  Discord Bot
+Claude Code  →  PreToolUse Hook  →  パーミッションチェック  →  Discord Bot  →  Discord
+                                          ↓                                      ↓
+                                    自動 allow/deny                         ボタンクリック
+                                    (設定に基づく)                                ↓
+Claude Code  ←  Hook レスポンス   ←  WebSocket Server   ←  Discord Bot
 ```
 
 ## 機能
 
-- **Approve**: 権限を許可
-- **Deny**: 権限を拒否（理由入力可能）
+- **スマートパーミッションチェック**: Claude Code の `settings.json` から allow/deny/ask ルールを読み込み
+- **デフォルト許可ツール**: 読み取り専用ツール（Read, Glob, Grep 等）は自動承認
+- **Discord 承認**: allow リストにないツールは Discord で承認を要求
+- **リッチ表示**: Edit は diff、Bash はコマンド、Write はファイルパスを表示
+- **承認/却下ボタン**: ワンクリックで承認または理由付き拒否
 - **タイムアウト**: 10分間応答がなければ Claude Code 側で確認
 
 ## セットアップ
@@ -63,45 +66,18 @@ DISCORD_CHANNEL_ID=<通知先チャンネルID>
 
 ### 4. Claude Code の Hook 設定
 
-設定JSONを自動生成:
-
-```bash
-./scripts/generate-hook-config.sh
-```
-
-出力された JSON を以下のいずれかにコピー:
+以下の JSON を Claude Code の設定に追加:
 
 #### グローバル設定（全プロジェクト共通）
 
-`~/.claude/settings.json` に保存
-
-#### リポジトリごとの設定
-
-プロジェクトルートに `.claude/settings.json` または `.claude/settings.local.json` を作成
-
-| ファイル | 用途 |
-|----------|------|
-| `.claude/settings.json` | チームで共有（Git 管理） |
-| `.claude/settings.local.json` | 個人用（.gitignore 推奨） |
-
-#### 特定のツールのみ通知する場合
+`~/.claude/settings.json` に保存:
 
 ```json
 {
   "hooks": {
-    "PermissionRequest": [
+    "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/path/to/cc-notify-app/scripts/hook-wrapper.sh",
-            "timeout": 600
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
@@ -115,13 +91,63 @@ DISCORD_CHANNEL_ID=<通知先チャンネルID>
 }
 ```
 
-使用可能な matcher:
-- `*` - 全ツール
-- `Bash` - シェルコマンド
-- `Edit|Write` - ファイル編集/作成
+#### リポジトリごとの設定
+
+プロジェクトルートに `.claude/settings.json` または `.claude/settings.local.json` を作成:
+
+| ファイル | 用途 |
+|----------|------|
+| `.claude/settings.json` | チームで共有（Git 管理） |
+| `.claude/settings.local.json` | 個人用（.gitignore 推奨） |
+
+## パーミッションチェックの仕組み
+
+Hook は Claude Code の設定ファイルからパーミッションルールを読み込みます（優先順）:
+1. `~/.claude/settings.json` (グローバル)
+2. `~/.claude/settings.local.json` (グローバルローカル)
+3. `.claude/settings.json` (プロジェクト)
+4. `.claude/settings.local.json` (プロジェクトローカル)
+
+### 判定ロジック
+
+1. **deny リストにマッチ** → 自動拒否（Discord 通知なし）
+2. **allow リストにマッチ** → 自動許可（Discord 通知なし）
+3. **ask リストにマッチ** → Discord で承認を要求
+4. **デフォルト許可ツール** → 自動許可（Discord 通知なし）
+5. **それ以外** → Discord で承認を要求
+
+### デフォルト許可ツール
+
+以下の読み取り専用ツールは Discord 通知なしで自動承認:
 - `Read` - ファイル読み込み
-- `WebFetch` - URL フェッチ
-- `Task` - サブエージェント
+- `Glob` - ファイルパターンマッチング
+- `Grep` - コンテンツ検索
+- `Task` - サブエージェント起動
+- `WebSearch` - Web 検索
+- `TodoRead` / `TodoWrite` - Todo 管理
+- `AskUserQuestion` - ユーザープロンプト
+
+### パーミッション設定例
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(git status:*)"
+    ],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
+```
 
 ## 使い方
 
@@ -257,7 +283,7 @@ pnpm build
 pnpm dev:server
 
 # Hook を手動テスト
-echo '{"session_id":"test","cwd":"/tmp","permission_mode":"default","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"ls"}}' | ./scripts/hook-wrapper.sh
+echo '{"session_id":"test","cwd":"/tmp","permission_mode":"default","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | ./scripts/hook-wrapper.sh
 ```
 
 ## ライセンス

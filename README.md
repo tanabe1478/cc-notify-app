@@ -6,21 +6,24 @@ A tool to send Claude Code permission requests to Discord and approve/deny them 
 
 ## Overview
 
-Every time Claude Code requests permission, a message with buttons is sent to Discord.
-You can approve or deny from anywhere - even on the go from another device.
+This tool integrates with Claude Code's `PreToolUse` hook to intercept tool calls before execution.
+It checks your permission settings and sends requests to Discord for tools that need approval.
 
 ```
-Claude Code  →  Hook Script  →  WebSocket  →  Discord Bot  →  Discord
-                                                    ↓
-                                              Button Click
-                                                    ↓
-Claude Code  ←  Hook Script  ←  WebSocket  ←  Discord Bot
+Claude Code  →  PreToolUse Hook  →  Permission Check  →  Discord Bot  →  Discord
+                                          ↓                                  ↓
+                                    Auto allow/deny                    Button Click
+                                    (based on settings)                      ↓
+Claude Code  ←  Hook Response    ←  WebSocket Server  ←  Discord Bot
 ```
 
 ## Features
 
-- **Approve**: Grant permission
-- **Deny**: Reject permission (with optional reason)
+- **Smart Permission Checking**: Reads Claude Code's `settings.json` to respect your allow/deny/ask rules
+- **Default Allowed Tools**: Read-only tools (Read, Glob, Grep, etc.) are auto-approved
+- **Discord Approval**: Tools not in allow list are sent to Discord for approval
+- **Rich Display**: Shows diffs for Edit, commands for Bash, file paths for Write
+- **Approve/Deny Buttons**: One-click approval or denial with optional reason
 - **Timeout**: Falls back to local prompt after 10 minutes
 
 ## Setup
@@ -63,45 +66,18 @@ How to get Channel ID:
 
 ### 4. Claude Code Hook Configuration
 
-Auto-generate the configuration JSON:
-
-```bash
-./scripts/generate-hook-config.sh
-```
-
-Copy the output JSON to one of the following:
+Add the following to your Claude Code settings:
 
 #### Global Settings (All Projects)
 
-Save to `~/.claude/settings.json`
-
-#### Per-Repository Settings
-
-Create `.claude/settings.json` or `.claude/settings.local.json` in your project root
-
-| File | Purpose |
-|------|---------|
-| `.claude/settings.json` | Shared with team (Git tracked) |
-| `.claude/settings.local.json` | Personal use (add to .gitignore) |
-
-#### Notify Only for Specific Tools
+Save to `~/.claude/settings.json`:
 
 ```json
 {
   "hooks": {
-    "PermissionRequest": [
+    "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/path/to/cc-notify-app/scripts/hook-wrapper.sh",
-            "timeout": 600
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
@@ -115,13 +91,63 @@ Create `.claude/settings.json` or `.claude/settings.local.json` in your project 
 }
 ```
 
-Available matchers:
-- `*` - All tools
-- `Bash` - Shell commands
-- `Edit|Write` - File editing/creation
+#### Per-Repository Settings
+
+Create `.claude/settings.json` or `.claude/settings.local.json` in your project root:
+
+| File | Purpose |
+|------|---------|
+| `.claude/settings.json` | Shared with team (Git tracked) |
+| `.claude/settings.local.json` | Personal use (add to .gitignore) |
+
+## How Permission Checking Works
+
+The hook reads permission rules from Claude Code's settings files (in order of precedence):
+1. `~/.claude/settings.json` (global)
+2. `~/.claude/settings.local.json` (global local)
+3. `.claude/settings.json` (project)
+4. `.claude/settings.local.json` (project local)
+
+### Decision Logic
+
+1. **Deny list match** → Auto-deny (no Discord notification)
+2. **Allow list match** → Auto-allow (no Discord notification)
+3. **Ask list match** → Send to Discord for approval
+4. **Default allowed tool** → Auto-allow (no Discord notification)
+5. **Otherwise** → Send to Discord for approval
+
+### Default Allowed Tools
+
+These read-only tools are auto-approved without Discord notification:
 - `Read` - File reading
-- `WebFetch` - URL fetching
-- `Task` - Subagents
+- `Glob` - File pattern matching
+- `Grep` - Content searching
+- `Task` - Subagent spawning
+- `WebSearch` - Web searching
+- `TodoRead` / `TodoWrite` - Todo management
+- `AskUserQuestion` - User prompts
+
+### Example Permission Settings
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(git status:*)"
+    ],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
+```
 
 ## Usage
 
@@ -257,7 +283,7 @@ pnpm build
 pnpm dev:server
 
 # Test hook manually
-echo '{"session_id":"test","cwd":"/tmp","permission_mode":"default","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"ls"}}' | ./scripts/hook-wrapper.sh
+echo '{"session_id":"test","cwd":"/tmp","permission_mode":"default","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | ./scripts/hook-wrapper.sh
 ```
 
 ## License

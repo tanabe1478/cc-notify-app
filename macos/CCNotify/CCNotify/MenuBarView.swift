@@ -18,6 +18,13 @@ struct MenuBarView: View {
 
             Divider()
 
+            // Error Banner
+            if let error = serverManager.lastError {
+                ErrorBanner(error: error) {
+                    serverManager.lastError = nil
+                }
+            }
+
             // Server Control
             VStack(alignment: .leading, spacing: 8) {
                 Text("Server")
@@ -136,6 +143,35 @@ struct RequestRow: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 2)
+    }
+}
+
+struct ErrorBanner: View {
+    let error: ServerManager.ServerError
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+
+            Text(error.message)
+                .font(.caption)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+
+            Spacer()
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(8)
+        .background(Color.red.opacity(0.15))
+        .cornerRadius(8)
+        .accessibilityIdentifier("errorBanner")
     }
 }
 
