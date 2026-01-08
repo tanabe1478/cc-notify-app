@@ -10,10 +10,12 @@ struct SettingsView: View {
                 HStack {
                     TextField("Server Path", text: $serverManager.serverPath)
                         .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier("serverPathField")
 
                     Button("Browse...") {
                         selectServerPath()
                     }
+                    .accessibilityIdentifier("browseButton")
                 }
 
                 Text("Path to dist/server/index.js")
@@ -25,6 +27,7 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Start server on launch", isOn: $serverManager.autoStart)
+                    .accessibilityIdentifier("autoStartToggle")
 
                 LaunchAtLoginToggle()
             } header: {
@@ -38,9 +41,11 @@ struct SettingsView: View {
                     if serverManager.isRunning {
                         Label("Running", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
+                            .accessibilityIdentifier("settingsStatusRunning")
                     } else {
                         Label("Stopped", systemImage: "xmark.circle.fill")
                             .foregroundStyle(.red)
+                            .accessibilityIdentifier("settingsStatusStopped")
                     }
                 }
 
@@ -49,10 +54,12 @@ struct SettingsView: View {
                         serverManager.stop()
                     }
                     .foregroundStyle(.red)
+                    .accessibilityIdentifier("settingsStopButton")
                 } else {
                     Button("Start Server") {
                         serverManager.start()
                     }
+                    .accessibilityIdentifier("settingsStartButton")
                 }
             } header: {
                 Text("Server Status")
@@ -61,6 +68,7 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 450, height: 300)
         .navigationTitle("Settings")
+        .accessibilityIdentifier("settingsView")
     }
 
     private func selectServerPath() {

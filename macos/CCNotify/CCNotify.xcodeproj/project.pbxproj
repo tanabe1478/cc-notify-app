@@ -10,12 +10,37 @@
 		0E77FEF8545A1DEEB4D72795 /* CCNotifyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85DD1642AE01B141EA21533 /* CCNotifyApp.swift */; };
 		1817FA1E2F5DC365143ECC0C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8302B9C7BE5F5642417F1A5 /* SettingsView.swift */; };
 		1E5A31B3C0C1017DBED83475 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2119FF989E2A1065B4E9686 /* MenuBarView.swift */; };
+		48C249A6DA7D4A81E8BF3A46 /* ServerManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 364C41F0434484968B1D3CB4 /* ServerManagerTests.swift */; };
+		6892A5AA97DBC773C9BC0520 /* CCNotifyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A44D29A10CAD06FDAB6F2CB /* CCNotifyUITests.swift */; };
 		CFF6B6DA6B93987AC326B212 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41E508602F18B4B7E98C46E /* ServerManager.swift */; };
+		F4B0A340341E81B8646AF75B /* ApprovalRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F44497C9309745338C6701A /* ApprovalRequestTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A05FFCA912715F54336F8900 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 895564508CCFC260D76417A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2ED07C18ED15050D2095E1D5;
+			remoteInfo = CCNotify;
+		};
+		CFA08CAAB66E2019F859CCD3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 895564508CCFC260D76417A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2ED07C18ED15050D2095E1D5;
+			remoteInfo = CCNotify;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		09B0C4800529AE184ED7CBC3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2A44D29A10CAD06FDAB6F2CB /* CCNotifyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CCNotifyUITests.swift; sourceTree = "<group>"; };
+		364C41F0434484968B1D3CB4 /* ServerManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManagerTests.swift; sourceTree = "<group>"; };
 		459072DE04BA0CBBDB57951A /* CCNotify.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCNotify.entitlements; sourceTree = "<group>"; };
+		5113C87D2B0788D76640B75D /* CCNotifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CCNotifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7833FBC5935BCB53BC02D9E7 /* CCNotifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CCNotifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7F44497C9309745338C6701A /* ApprovalRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalRequestTests.swift; sourceTree = "<group>"; };
 		93D12B7B79EDC07385305EE5 /* CCNotify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CCNotify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2119FF989E2A1065B4E9686 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		A8302B9C7BE5F5642417F1A5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -28,14 +53,27 @@
 			isa = PBXGroup;
 			children = (
 				AE767CE43927EA88CF936E41 /* CCNotify */,
+				7D2D065B140F049777C6AB07 /* CCNotifyTests */,
+				FED269B7BE445E0EED48403B /* CCNotifyUITests */,
 				8FD95A48DB6BDE10D9BC1198 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		7D2D065B140F049777C6AB07 /* CCNotifyTests */ = {
+			isa = PBXGroup;
+			children = (
+				7F44497C9309745338C6701A /* ApprovalRequestTests.swift */,
+				364C41F0434484968B1D3CB4 /* ServerManagerTests.swift */,
+			);
+			path = CCNotifyTests;
 			sourceTree = "<group>";
 		};
 		8FD95A48DB6BDE10D9BC1198 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				93D12B7B79EDC07385305EE5 /* CCNotify.app */,
+				7833FBC5935BCB53BC02D9E7 /* CCNotifyTests.xctest */,
+				5113C87D2B0788D76640B75D /* CCNotifyUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -51,6 +89,14 @@
 				A8302B9C7BE5F5642417F1A5 /* SettingsView.swift */,
 			);
 			path = CCNotify;
+			sourceTree = "<group>";
+		};
+		FED269B7BE445E0EED48403B /* CCNotifyUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2A44D29A10CAD06FDAB6F2CB /* CCNotifyUITests.swift */,
+			);
+			path = CCNotifyUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -73,6 +119,42 @@
 			productReference = 93D12B7B79EDC07385305EE5 /* CCNotify.app */;
 			productType = "com.apple.product-type.application";
 		};
+		60238B1EB0FEA185CE4B4F16 /* CCNotifyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BEECC393F07EABC4A93FCAA /* Build configuration list for PBXNativeTarget "CCNotifyTests" */;
+			buildPhases = (
+				A60BDABAFAC2556DDB2B1AC3 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AD02A03C7C38BBA1EB3A6B07 /* PBXTargetDependency */,
+			);
+			name = CCNotifyTests;
+			packageProductDependencies = (
+			);
+			productName = CCNotifyTests;
+			productReference = 7833FBC5935BCB53BC02D9E7 /* CCNotifyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		8CA65C1709632A584E38CE15 /* CCNotifyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14F683469C31B21F5820D7F9 /* Build configuration list for PBXNativeTarget "CCNotifyUITests" */;
+			buildPhases = (
+				7A695752C4BCA8A6A8C907DC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C741188B95B327B12DE2F35E /* PBXTargetDependency */,
+			);
+			name = CCNotifyUITests;
+			packageProductDependencies = (
+			);
+			productName = CCNotifyUITests;
+			productReference = 5113C87D2B0788D76640B75D /* CCNotifyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -84,6 +166,13 @@
 				TargetAttributes = {
 					2ED07C18ED15050D2095E1D5 = {
 						ProvisioningStyle = Automatic;
+					};
+					60238B1EB0FEA185CE4B4F16 = {
+						ProvisioningStyle = Automatic;
+					};
+					8CA65C1709632A584E38CE15 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 2ED07C18ED15050D2095E1D5;
 					};
 				};
 			};
@@ -102,11 +191,30 @@
 			projectRoot = "";
 			targets = (
 				2ED07C18ED15050D2095E1D5 /* CCNotify */,
+				60238B1EB0FEA185CE4B4F16 /* CCNotifyTests */,
+				8CA65C1709632A584E38CE15 /* CCNotifyUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7A695752C4BCA8A6A8C907DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6892A5AA97DBC773C9BC0520 /* CCNotifyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A60BDABAFAC2556DDB2B1AC3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F4B0A340341E81B8646AF75B /* ApprovalRequestTests.swift in Sources */,
+				48C249A6DA7D4A81E8BF3A46 /* ServerManagerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DCD618D8DCFC0D658E51CFFF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -120,7 +228,56 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		AD02A03C7C38BBA1EB3A6B07 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2ED07C18ED15050D2095E1D5 /* CCNotify */;
+			targetProxy = CFA08CAAB66E2019F859CCD3 /* PBXContainerItemProxy */;
+		};
+		C741188B95B327B12DE2F35E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2ED07C18ED15050D2095E1D5 /* CCNotify */;
+			targetProxy = A05FFCA912715F54336F8900 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		03A650B07142D6A5E59DE2CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ccnotify.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CC Notify.app/Contents/MacOS/CC Notify";
+			};
+			name = Release;
+		};
+		146D958274D120E1ACE40DC6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ccnotify.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CC Notify.app/Contents/MacOS/CC Notify";
+			};
+			name = Debug;
+		};
 		47159259CAA079D5A6FCEFEE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -174,6 +331,24 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		4761EF1A260FA37A04658AF4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ccnotify.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = CCNotify;
 			};
 			name = Release;
 		};
@@ -247,6 +422,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCNotify/CCNotify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = CCNotify/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -255,6 +431,7 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ccnotify.app;
+				PRODUCT_MODULE_NAME = CCNotify;
 				PRODUCT_NAME = "CC Notify";
 				SDKROOT = macosx;
 			};
@@ -267,6 +444,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCNotify/CCNotify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = CCNotify/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -275,14 +453,51 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ccnotify.app;
+				PRODUCT_MODULE_NAME = CCNotify;
 				PRODUCT_NAME = "CC Notify";
 				SDKROOT = macosx;
 			};
 			name = Release;
 		};
+		FDE22C8D50A365B7DAF415AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ccnotify.uitests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = CCNotify;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		14F683469C31B21F5820D7F9 /* Build configuration list for PBXNativeTarget "CCNotifyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FDE22C8D50A365B7DAF415AE /* Debug */,
+				4761EF1A260FA37A04658AF4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3BEECC393F07EABC4A93FCAA /* Build configuration list for PBXNativeTarget "CCNotifyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				146D958274D120E1ACE40DC6 /* Debug */,
+				03A650B07142D6A5E59DE2CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		9D690BBB218C4B9611C2B504 /* Build configuration list for PBXProject "CCNotify" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -32,6 +32,7 @@ struct MenuBarView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
+                        .accessibilityIdentifier("stopServerButton")
                     } else {
                         Button(action: { serverManager.start() }) {
                             Label("Start Server", systemImage: "play.fill")
@@ -39,6 +40,7 @@ struct MenuBarView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.green)
+                        .accessibilityIdentifier("startServerButton")
                     }
                 }
             }
@@ -67,6 +69,7 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.blue)
+                .accessibilityIdentifier("settingsButton")
 
                 Spacer()
 
@@ -76,11 +79,13 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("quitButton")
             }
             .font(.caption)
         }
         .padding()
         .frame(width: 280)
+        .accessibilityIdentifier("menuBarView")
     }
 }
 
@@ -95,11 +100,13 @@ struct StatusBadge: View {
             Text(isRunning ? "Running" : "Stopped")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier(isRunning ? "statusRunning" : "statusStopped")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(.quaternary)
         .clipShape(Capsule())
+        .accessibilityIdentifier("statusBadge")
     }
 }
 
